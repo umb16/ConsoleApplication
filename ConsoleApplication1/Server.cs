@@ -11,6 +11,7 @@ namespace ConsoleApplication1
 {
     class Server
     {
+        static int listenPort = 25565;
         public static Users users = new Users();
         public static TcpListener Listener; // Объект, принимающий TCP-клиентов
         static void ListenerTread()
@@ -42,6 +43,7 @@ namespace ConsoleApplication1
             // И запускаем этот поток
             Thread.Start();
             // В бесконечном цикле
+            Console.WriteLine("Server start");
             while (true)
             {
                 if (Console.ReadLine() == "stop")
@@ -67,13 +69,23 @@ namespace ConsoleApplication1
 
         static void Main(string[] args)
         {
-            
-           users = (Users) Serialize.Deserialization("111.mdb",users);
+            users = (Users)Serialize.Deserialization("111.mdb", users);
+            users.ClearStatus();
 
-           users.ClearStatus();
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "port")
+                    if (i + 1 < args.Length)
+                    {
+                        int.TryParse(args[i + 1], out listenPort);
+                        Console.WriteLine("Set port {0}", listenPort);
+                        break;
+                    }
+            }
             
             // Создадим новый сервер на порту 80
-           new Server(25565);
+                new Server(listenPort);
             
         }
     }
