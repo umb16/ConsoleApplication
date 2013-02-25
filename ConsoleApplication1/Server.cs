@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace ConsoleApplication1
 {
     class Server
     {
+        static int frequency = 60;
+        static int saveTimer = DateTime.Now.Second;
         static int listenPort = 25565;
         public static Users users = new Users();
         public static TcpListener Listener; // Объект, принимающий TCP-клиентов
-        static void ListenerTread()
+        static void ListenerThread()
         {
             while (true)
             {
@@ -24,6 +24,31 @@ namespace ConsoleApplication1
                 Thread Thread = new Thread(new ParameterizedThreadStart(ClientThread));
                 // И запускаем этот поток, передавая ему принятого клиента
                 Thread.Start(Client);
+            }
+        }
+
+        static void checkOnlineUsersThread()
+        {
+            while (true)
+            {
+                for (int i = 0; i < users.usersList.Count; i++)
+                {
+                    if(users.usersList[i].status != Constants.zero)
+                    if (users.usersList[i].timer + 5 < DateTime.Now.Second)
+                    {
+                        
+                        users.usersList[i].status = Constants.zero;
+                        Console.WriteLine("{0} timeout kick", Server.users.usersList[i].login);
+                    }
+                }
+                if (saveTimer + frequency < DateTime.Now.Second)
+                {
+                    saveTimer = DateTime.Now.Second;
+                    Serialize.Serialization("111.mdb", users);
+                    Console.WriteLine("Save ok");
+
+                }
+                Thread.Sleep(1000);
             }
         }
 
@@ -39,32 +64,24 @@ namespace ConsoleApplication1
             Listener = new TcpListener(IPAddress.Any, Port);
             Listener.Start(); // Запускаем его
 
-            Thread Thread = new Thread(new ThreadStart(ListenerTread));
+            Thread thread = new Thread(new ThreadStart(ListenerThread));
             // И запускаем этот поток
-            Thread.Start();
+            thread.Start();
+
+            Thread thread2 = new Thread(new ThreadStart(checkOnlineUsersThread));
+            // И запускаем этот поток
+            thread2.Start();
+
             // В бесконечном цикле
             Console.WriteLine("Server start");
             while (true)
             {
                 if (Console.ReadLine() == "stop")
                 {
-                   // Thread.Abort();
                     Serialize.Serialization("111.mdb", users);
                     Environment.Exit(0);
                 }
             }
-        }
-
-        // Остановка сервера
-        ~Server()
-        {
-            Serialize.Serialization("111.mdb", users);
-            // Если "слушатель" был создан
-           /* if (Listener != null)
-            {
-                // Остановим его
-                Listener.Stop();
-            }*/
         }
 
         static void Main(string[] args)
@@ -78,15 +95,15 @@ namespace ConsoleApplication1
                 if (args[i] == "port")
                     if (i + 1 < args.Length)
                     {
-                        int.TryParse(args[i + 1], out listenPort);
-                        Console.WriteLine("Set port {0}", listenPort);
+                        if (int.TryParse(args[i + 1], out listenPort))
+                            Console.WriteLine("Set port {0}", listenPort);
                         break;
                     }
             }
-            
+
             // Создадим новый сервер на порту 80
-                new Server(listenPort);
-            
+            new Server(listenPort);
+
         }
     }
 }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleApplication1
 {
@@ -22,6 +20,7 @@ namespace ConsoleApplication1
         public string login;
         public string password;
         public int status;
+        public int timer;
     }
 
     public class Users
@@ -57,6 +56,25 @@ namespace ConsoleApplication1
             return tempOnlineUsers;
         }
 
+        public bool sendInvite(string login,string message)
+        {
+            for (int i = 0; i < usersList.Count; i++)
+            {
+                if (usersList[i].login == login)
+                {
+                    if (usersList[i].status != Constants.zero && usersList[i].status != Constants.receivedInvite)
+                    {
+                        usersList[i].message = message;
+                        usersList[i].status = Constants.receivedInvite;
+                        return true;
+                    }
+                    else
+                        return false;
+                }
+            }
+            return false;
+        }
+
         public int CheckLoginInfo(string login, string password)
         {
             for (int i = 0; i < usersList.Count; i++)
@@ -67,11 +85,16 @@ namespace ConsoleApplication1
                         if (usersList[i].status == 0)
                         {
                             usersList[i].status = Constants.loginOk;
+                            usersList[i].timer = DateTime.Now.Second;
                             Console.WriteLine("{0} login", Server.users.usersList[i].login);
+
                             return Constants.loginOk;
                         }
                         else
+                        {
+                            usersList[i].status = Constants.zero;
                             return Constants.doubleLogining;
+                        }
                     }
                     else
                         return Constants.incorrectPassword;
